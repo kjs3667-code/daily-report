@@ -284,7 +284,7 @@ async function loadRate() {
   const cached = JSON.parse(localStorage.getItem('rate-cache')||'null');
   if (cached && cached.date === today) { liveRate = cached.rate; setRate('rateCache'); return; }
   try {
-    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN');
+    const r = await fetch('https://open.er-api.com/v6/latest/USD');
     const d = await r.json();
     liveRate = d.rates.MXN;
     localStorage.setItem('rate-cache', JSON.stringify({rate:liveRate, date:today}));
