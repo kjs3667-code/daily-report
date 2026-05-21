@@ -220,7 +220,7 @@ var TX = {
     saving: '저장 중...', saved: '저장 완료 ✓',
     copied: '복사됐어요 — 카카오톡에 붙여넣기 하세요',
     loading: '불러오는 중...', historyEmpty: '아직 저장된 보고서가 없습니다.',
-    thDate: '날짜', thUSD: 'USD 잔고', thMXN: 'MXN 잔고', thFX: '환전', thMemo: '메모', thDel: '삭제',
+    thDate: '날짜', thUSD: 'USD 잔고', thMXN: 'MXN 잔고', thFX: '환전', thFXDir: '방향', thFXAmt: '환전금액', thFXRate: '환율', thFXResult: '환산금액', thMemo: '메모', thDel: '삭제',
     noFX: '없음',
     confirmDel: '이 보고서를 삭제할까요?', deleted: '삭제됐어요',
     kakaoTitle: '📊 일일 잔고 보고',
@@ -243,7 +243,7 @@ var TX = {
     saving: 'Guardando...', saved: 'Guardado ✓',
     copied: 'Copiado — pega en KakaoTalk',
     loading: 'Cargando...', historyEmpty: 'Aún no hay reportes guardados.',
-    thDate: 'Fecha', thUSD: 'Saldo USD', thMXN: 'Saldo MXN', thFX: 'Cambio', thMemo: 'Notas', thDel: 'Borrar',
+    thDate: 'Fecha', thUSD: 'Saldo USD', thMXN: 'Saldo MXN', thFX: 'Cambio', thFXDir: 'Dirección', thFXAmt: 'Monto', thFXRate: 'Tipo', thFXResult: 'Resultado', thMemo: 'Notas', thDel: 'Borrar',
     noFX: 'Ninguno',
     confirmDel: '¿Eliminar este reporte?', deleted: 'Eliminado',
     kakaoTitle: '📊 Reporte diario de saldos',
@@ -434,31 +434,55 @@ function loadHistory() {
         '<th>' + t('thDate') + '</th>' +
         '<th>' + t('thUSD') + '</th>' +
         '<th>' + t('thMXN') + '</th>' +
-        '<th>' + t('thFX') + '</th>' +
+        '<th>' + t('thFXDir') + '</th>' +
+        '<th>' + t('thFXAmt') + '</th>' +
+        '<th>' + t('thFXRate') + '</th>' +
+        '<th>' + t('thFXResult') + '</th>' +
         '<th>' + t('thMemo') + '</th>' +
         '<th>' + t('thDel') + '</th>' +
         '</tr></thead><tbody>';
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
-        var fxStr = '—';
+        var fxDir = '—', fxAmt = '—', fxRate = '—', fxResult = '—';
         if (r.fx && r.fx.length) {
-          fxStr = r.fx.map(function(f) {
-            var result = f.dir + ' ' + (f.amt || 0).toLocaleString();
-            if (f.rate) {
-              result += ' @ ' + parseFloat(f.rate).toFixed(2);
-              if (f.dir === 'USD→MXN') {
-                result += '<br><span style="color:var(--mxn)">= MXN ' + Math.round(f.amt * f.rate).toLocaleString() + '</span>';
-              } else {
-                result += '<br><span style="color:var(--usd)">= USD ' + Math.round(f.amt * f.rate).toLocaleString() + '</span>';
-              }
-            }
-            return result;
-          }).join('<br>—<br>');
+          fxDir = r.fx.map(function(f) { return f.dir; }).join('<br>');
+          fxAmt = r.fx.map(function(f) { return (f.amt||0).toLocaleString(); }).join('<br>');
+          fxRate = r.fx.map(function(f) { return f.rate ? parseFloat(f.rate).toFixed(2) : '—'; }).join('<br>');
+          fxResult = r.fx.map(function(f) {
+            if (!f.rate) return '—';
+            var val = Math.round(f.amt * f.rate).toLocaleString();
+            var color = f.dir === 'USD→MXN' ? 'var(--mxn)' : 'var(--usd)';
+            var cur = f.dir === 'USD→MXN' ? 'MXN' : 'USD';
+            return '<span style="color:' + color + ';font-weight:500">' + cur + ' ' + val + '</span>';
+          }).join('<br>');
         }
         var dateLabel = r.date_label || r.date_key;
         html += '<tr>' +
           '<td>' + dateLabel + '</td>' +
           '<td>$' + (r.usd || 0).toLocaleString() + '</td>' +
           '<td>$' + (r.mxn || 0).toLocaleString() + '</td>' +
-          '<td style="font-size:11px;min-width:160px;">' + fxStr + '</td>' +
-          '<td style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellip
+          '<td>' + fxDir + '</td>' +
+          '<td>' + fxAmt + '</td>' +
+          '<td>' + fxRate + '</td>' +
+          '<td>' + fxResult + '</td>' +
+          '<td style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--sans)">' + (r.memo || '—') + '</td>' +
+          '<td><button class="btn-danger" onclick="deleteReport(\'' + r.id + '\',\'' + dateLabel + '\')">🗑</button></td>' +
+          '</tr>';
+      }
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    })
+    .catch(function(e) { wrap.innerHTML = '<div class="empty">오류: ' + e.message + '</div>'; });
+}
+
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2800);
+}
+
+setLang(currentLang);
+</script>
+</body>
+</html>
