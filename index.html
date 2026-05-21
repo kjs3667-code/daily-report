@@ -76,6 +76,9 @@
   .loading { text-align: center; padding: 2rem; color: var(--text3); font-size: 13px; }
   .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 20px; border-radius: 99px; font-size: 13px; opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 999; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .today-bar { background: var(--usd-bg); border: 1px solid #C2DFC9; border-radius: 10px; padding: 10px 14px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--usd); }
+  .btn-danger { background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: var(--sans); }
+  .btn-danger:hover { background: #FDEDED; }
   .admin-badge { display: inline-flex; align-items: center; gap: 5px; background: #2A2826; color: #C8B99A; font-size: 11px; padding: 3px 10px; border-radius: 99px; font-family: var(--mono); }
   .logout-btn { background: none; border: 1px solid #3A3835; color: #7A7570; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: var(--sans); }
   .logout-btn:hover { background: #2A2826; color: #C8B99A; }
@@ -117,6 +120,10 @@
 
   <!-- ENTRY TAB -->
   <div id="tab-entry">
+    <div id="today-bar" style="display:none;" class="today-bar">
+      <span id="today-bar-text"></span>
+      <button class="btn-danger" onclick="deleteTodayReport()" data-ko="오늘 보고서 삭제" data-es="Eliminar reporte de hoy">오늘 보고서 삭제</button>
+    </div>
     <div class="metric-grid">
       <div class="metric">
         <div class="metric-label" data-ko="USD 잔고" data-es="Saldo USD">USD 잔고</div>
@@ -444,28 +451,4 @@ function loadHistory() {
         var fxStr = r.fx && r.fx.length ? r.fx.map(function(f) { return f.dir; }).join(', ') : '—';
         html += '<tr>' +
           '<td>' + (r.date_label || r.date_key) + '</td>' +
-          '<td>$' + (r.usd || 0).toLocaleString() + '</td>' +
-          '<td>$' + (r.mxn || 0).toLocaleString() + '</td>' +
-          '<td>' + fxStr + '</td>' +
-          '<td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--sans);">' + (r.memo || '—') + '</td>' +
-          '</tr>';
-      });
-      html += '</tbody></table>';
-      wrap.innerHTML = html;
-    })
-    .catch(function(e) { wrap.innerHTML = '<div class="empty">오류: ' + e.message + '</div>'; });
-}
-
-// Toast
-function showToast(msg) {
-  var el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(function() { el.classList.remove('show'); }, 2800);
-}
-
-// Start
-setLang(currentLang);
-</script>
-</body>
-</html>
+          '<td>$' + (r.usd || 0).toLoca
