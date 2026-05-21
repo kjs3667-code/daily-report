@@ -433,6 +433,18 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(function(b, i) { b.classList.toggle('active', (i === 0) === (tab === 'entry')); });
 }
 
+// Delete single report
+function deleteReport(id, dateKey) {
+  var msg = currentLang === 'ko' ? dateKey + ' 보고서를 삭제할까요?' : '¿Eliminar el reporte del ' + dateKey + '?';
+  if (!confirm(msg)) return;
+  sbFetch(TABLE + '?id=eq.' + id, { method: 'DELETE' })
+    .then(function() {
+      showToast(currentLang === 'ko' ? '삭제됐어요' : 'Eliminado');
+      loadHistory();
+    })
+    .catch(function(e) { showToast('오류: ' + e.message); });
+}
+
 // History
 function loadHistory() {
   var wrap = document.getElementById('history-wrap');
@@ -442,13 +454,4 @@ function loadHistory() {
       if (!rows || !rows.length) { wrap.innerHTML = '<div class="empty">' + t('historyEmpty') + '</div>'; return; }
       var html = '<table><thead><tr>' +
         '<th>' + t('thDate') + '</th>' +
-        '<th>' + t('thUSD') + '</th>' +
-        '<th>' + t('thMXN') + '</th>' +
-        '<th>' + t('thFX') + '</th>' +
-        '<th>' + t('thMemo') + '</th>' +
-        '</tr></thead><tbody>';
-      rows.forEach(function(r) {
-        var fxStr = r.fx && r.fx.length ? r.fx.map(function(f) { return f.dir; }).join(', ') : '—';
-        html += '<tr>' +
-          '<td>' + (r.date_label || r.date_key) + '</td>' +
-          '<td>$' + (r.usd || 0).toLoca
+        '<th>' + t(
