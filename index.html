@@ -13,7 +13,7 @@
     --text: #1A1916; --text2: #6B6760; --text3: #9A958E;
     --usd: #1A5C3A; --usd-bg: #EAF4EE;
     --mxn: #7A3B00; --mxn-bg: #FDF0E3;
-    --rate: #1A3A6B;
+    
     --accent: #C84B2F; --green: #2A7A4B;
     --mono: 'DM Mono', monospace;
     --sans: 'Noto Sans KR', sans-serif;
@@ -37,12 +37,12 @@
   .tabs { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; margin-bottom: 1.5rem; width: fit-content; }
   .tab { padding: 7px 20px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text2); font-family: var(--sans); transition: all 0.15s; }
   .tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .metric-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .metric-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 1.25rem; }
   @media(max-width:600px){ .metric-grid{grid-template-columns:1fr 1fr} .form-row{grid-template-columns:1fr!important} .fx-row{grid-template-columns:1fr 1fr!important} .header{padding:1rem} .main{padding:1.25rem 1rem 3rem} }
   .metric { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; }
   .metric-label { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
   .metric-value { font-family: var(--mono); font-size: 19px; font-weight: 500; line-height: 1; }
-  .metric-value.usd{color:var(--usd)} .metric-value.mxn{color:var(--mxn)} .metric-value.rate{color:var(--rate)}
+  .metric-value.usd{color:var(--usd)} .metric-value.mxn{color:var(--mxn)} 
   .metric-sub { font-size: 11px; color: var(--text3); margin-top: 4px; font-family: var(--mono); }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
   .card-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
@@ -53,7 +53,7 @@
   .form-group input, .form-group select, .form-group textarea { font-family: var(--mono); font-size: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; color: var(--text); outline: none; transition: border-color 0.15s; -webkit-appearance:none; }
   .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--border2); background: var(--surface); }
   .form-group textarea { resize: vertical; min-height: 70px; font-family: var(--sans); font-size: 13px; line-height: 1.6; }
-  .fx-row { display: grid; grid-template-columns: 1.2fr 1.5fr 1.5fr auto; gap: 8px; align-items: end; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .fx-row { display: grid; grid-template-columns: 1.2fr 1.5fr auto; gap: 8px; align-items: end; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .fx-entry { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; font-family: var(--mono); }
   .badge { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
   .badge-buy { background: var(--usd-bg); color: var(--usd); border: 1px solid #C2DFC9; }
@@ -105,16 +105,6 @@
   </div>
 </header>
 
-<div class="rate-banner">
-  <div class="live-pill">
-    <span class="live-dot"></span>
-    <span data-ko="실시간 환율" data-es="Tipo de cambio">실시간 환율</span>
-  </div>
-  <span class="rate-val" id="live-rate">—</span>
-  <span style="color:var(--text3);font-size:12px;">MXN / USD</span>
-  <span style="margin-left:auto;font-size:11px;color:var(--text3);" id="rate-time"></span>
-</div>
-
 <div class="pw-overlay" id="pw-overlay" style="display:none;">
   <div class="pw-box">
     <h2 id="pw-title">🔒 관리자 확인</h2>
@@ -137,9 +127,7 @@
     <div class="metric-grid">
       <div class="metric"><div class="metric-label" data-ko="USD 잔고" data-es="Saldo USD">USD 잔고</div><div class="metric-value usd" id="m-usd">—</div></div>
       <div class="metric"><div class="metric-label" data-ko="MXN 잔고" data-es="Saldo MXN">MXN 잔고</div><div class="metric-value mxn" id="m-mxn">—</div></div>
-      <div class="metric"><div class="metric-label" data-ko="USD→MXN 환산" data-es="USD→MXN equiv.">USD→MXN 환산</div><div class="metric-value rate" id="m-equiv">—</div><div class="metric-sub" id="m-equiv-sub"></div></div>
-      <div class="metric"><div class="metric-label" data-ko="총 MXN 합계" data-es="Total en MXN">총 MXN 합계</div><div class="metric-value" id="m-total">—</div></div>
-    </div>
+      </div>
 
     <div class="card">
       <div class="card-title" data-ko="잔고 입력" data-es="Ingresar saldos">잔고 입력</div>
@@ -158,7 +146,6 @@
       <div class="fx-row">
         <div class="form-group"><label data-ko="방향" data-es="Dirección">방향</label><select id="fx-dir"><option value="USD→MXN">USD → MXN</option><option value="MXN→USD">MXN → USD</option></select></div>
         <div class="form-group"><label data-ko="금액" data-es="Monto">금액</label><input type="number" id="fx-amt" placeholder="0" /></div>
-        <div class="form-group"><label data-ko="적용 환율" data-es="Tipo aplicado">적용 환율</label><input type="number" id="fx-rate-inp" placeholder="—" /></div>
         <div class="form-group"><label>&nbsp;</label><button class="btn-icon" onclick="addFx()" data-ko="+ 추가" data-es="+ Agregar">+ 추가</button></div>
       </div>
     </div>
@@ -296,8 +283,8 @@ async function loadRate() {
 }
 
 function setRate(labelKey) {
-  document.getElementById('live-rate').textContent = liveRate.toFixed(4);
-  document.getElementById('rate-time').textContent = t(labelKey);
+  // rate display handled by input
+  // no rate time display
   document.getElementById('fx-rate-inp').placeholder = liveRate.toFixed(2);
   updateMetrics();
 }
@@ -307,16 +294,6 @@ function updateMetrics() {
   const mxn = parseFloat(document.getElementById('inp-mxn').value)||0;
   document.getElementById('m-usd').textContent = usd ? '$'+Math.round(usd).toLocaleString() : '—';
   document.getElementById('m-mxn').textContent = mxn ? '$'+Math.round(mxn).toLocaleString() : '—';
-  if (usd && liveRate) {
-    const eq = usd*liveRate;
-    document.getElementById('m-equiv').textContent = '$'+Math.round(eq).toLocaleString();
-    document.getElementById('m-equiv-sub').textContent = '@ '+liveRate.toFixed(2);
-    document.getElementById('m-total').textContent = '$'+Math.round(eq+mxn).toLocaleString();
-  } else {
-    document.getElementById('m-equiv').textContent = '—';
-    document.getElementById('m-equiv-sub').textContent = '';
-    document.getElementById('m-total').textContent = '—';
-  }
 }
 
 // FX
@@ -335,7 +312,7 @@ function renderFx() {
   wrap.innerHTML = fxList.map((f,i) => `
     <div class="fx-entry">
       <span class="badge ${f.dir.startsWith('USD')?'badge-buy':'badge-sell'}">${f.dir}</span>
-      <span style="flex:1;">${f.amt.toLocaleString()} <span style="color:var(--text3);">@ ${f.rate?f.rate.toFixed(2):'—'}</span></span>
+      <span style="flex:1;">${f.amt.toLocaleString()}</span>
       <button class="remove-btn" onclick="removeFx(${i})">×</button>
     </div>`).join('');
 }
@@ -346,13 +323,13 @@ async function saveReport() {
   const mxn = document.getElementById('inp-mxn').value;
   if (!usd && !mxn) { showToast(t('saveEmpty')); return; }
   showToast(t('saving'));
-  const dateKey = new Date().toISOString().slice(0,10);
+  const dateKey = new Date().toISOString().slice(0,10);z
   const payload = {
     date_key: dateKey,
     date_label: new Date().toLocaleDateString('ko-KR'),
     usd: parseFloat(usd)||0,
     mxn: parseFloat(mxn)||0,
-    rate: liveRate,
+    rate: null,
     fx: fxList,
     memo: document.getElementById('inp-memo').value,
     saved_at: Date.now()
@@ -379,11 +356,9 @@ function copyKakao() {
   const mxn = parseFloat(document.getElementById('inp-mxn').value)||0;
   const memo = document.getElementById('inp-memo').value;
   const today = new Date().toLocaleDateString('ko-KR');
-  const rate = liveRate ? liveRate.toFixed(2) : '—';
-  const equiv = liveRate ? Math.round(usd*liveRate).toLocaleString() : '—';
-  const total = liveRate ? Math.round(usd*liveRate+mxn).toLocaleString() : '—';
+  
   const fxText = fxList.length ? fxList.map(f=>`  • ${f.dir}  ${f.amt.toLocaleString()}  (@ ${f.rate?f.rate.toFixed(2):'—'})`).join('\n') : `  ${t('noFX')}`;
-  const text = [`${t('kakaoTitle')} — ${today}`,``,`${t('kakaoUSD')}   $${usd.toLocaleString()}`,`${t('kakaoMXN')}   $${mxn.toLocaleString()}`,`${t('kakaoRate')}   ${rate} MXN/USD`,``,`${t('kakaoEquiv')}   $${equiv}`,`${t('kakaoTotal')}   $${total}`,``,`${t('kakaoFX')}`,fxText,memo?`\n${t('kakaoMemo')}\n${memo}`:''].join('\n');
+  const text = [`${t('kakaoTitle')} — ${today}`,``,`${t('kakaoUSD')}   $${usd.toLocaleString()}`,`${t('kakaoMXN')}   $${mxn.toLocaleString()}`,`${t('kakaoFX')}`,fxText,memo?`\n${t('kakaoMemo')}\n${memo}`:''].join('\n');
   navigator.clipboard.writeText(text).then(()=>showToast(t('copied')));
 }
 
@@ -472,7 +447,6 @@ function showToast(msg) {
   setTimeout(()=>el.classList.remove('show'), 2800);
 }
 
-loadRate();
 setLang(currentLang);
 </script>
 </body>
