@@ -53,7 +53,7 @@
   .form-group input, .form-group select, .form-group textarea { font-family: var(--mono); font-size: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; color: var(--text); outline: none; transition: border-color 0.15s; -webkit-appearance:none; }
   .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--border2); background: var(--surface); }
   .form-group textarea { resize: vertical; min-height: 70px; font-family: var(--sans); font-size: 13px; line-height: 1.6; }
-  .fx-row { display: grid; grid-template-columns: 1.2fr 1.5fr auto; gap: 8px; align-items: end; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .fx-row { display: grid; grid-template-columns: 1.2fr 1.5fr 1.2fr auto; gap: 8px; align-items: end; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .fx-entry { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; font-family: var(--mono); }
   .badge { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
   .badge-buy { background: var(--usd-bg); color: var(--usd); border: 1px solid #C2DFC9; }
@@ -113,7 +113,7 @@
     <div class="pw-error" id="pw-error"></div>
     <button class="btn-primary" style="width:100%;" onclick="checkPw()" id="pw-btn">확인</button>
     <button onclick="closePwOverlay()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--text3);margin-top:12px;font-family:var(--sans);">취소 / Cancelar</button>
-    <div class="pw-hint" id="pw-hint">기본 비밀번호: 1234</div>
+    
   </div>
 </div>
 
@@ -146,6 +146,7 @@
       <div class="fx-row">
         <div class="form-group"><label data-ko="방향" data-es="Dirección">방향</label><select id="fx-dir"><option value="USD→MXN">USD → MXN</option><option value="MXN→USD">MXN → USD</option></select></div>
         <div class="form-group"><label data-ko="금액" data-es="Monto">금액</label><input type="number" id="fx-amt" placeholder="0" /></div>
+        <div class="form-group"><label data-ko="적용 환율" data-es="Tipo aplicado">적용 환율</label><input type="number" id="fx-rate-inp" placeholder="예: 19.50" step="0.01" /></div>
         <div class="form-group"><label>&nbsp;</label><button class="btn-icon" onclick="addFx()" data-ko="+ 추가" data-es="+ Agregar">+ 추가</button></div>
       </div>
     </div>
@@ -182,7 +183,7 @@
 const SUPABASE_URL = 'https://kbmlocpqwndamqqswcbj.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_1E1dLPvZAP02MHjakKlyVQ_yAvXesuO';
 const TABLE = 'reports';
-const DEFAULT_PW = '1234';
+const DEFAULT_PW = '1313';
 
 let fxList = [];
 let liveRate = null;
@@ -225,7 +226,7 @@ const I18N = {
 };
 
 function t(k) { return I18N[currentLang][k]; }
-function getPw() { return localStorage.getItem('admin-pw') || DEFAULT_PW; }
+function getPw() { return DEFAULT_PW; }
 
 // Supabase API
 async function sbFetch(path, options={}) {
@@ -300,7 +301,7 @@ function updateMetrics() {
 function addFx() {
   const amt = parseFloat(document.getElementById('fx-amt').value);
   if (!amt) { showToast(t('fxEmpty')); return; }
-  fxList.push({ dir: document.getElementById('fx-dir').value, amt, rate: parseFloat(document.getElementById('fx-rate-inp').value)||liveRate||null });
+  fxList.push({ dir: document.getElementById('fx-dir').value, amt, rate: parseFloat(document.getElementById('fx-rate-inp').value)||null });
   document.getElementById('fx-amt').value = '';
   document.getElementById('fx-rate-inp').value = '';
   renderFx();
@@ -312,7 +313,7 @@ function renderFx() {
   wrap.innerHTML = fxList.map((f,i) => `
     <div class="fx-entry">
       <span class="badge ${f.dir.startsWith('USD')?'badge-buy':'badge-sell'}">${f.dir}</span>
-      <span style="flex:1;">${f.amt.toLocaleString()}</span>
+      <span style="flex:1;">${f.amt.toLocaleString()}${f.rate ? '  <span style="color:var(--text3);">@ '+f.rate.toFixed(2)+'</span>' : ''}</span>
       <button class="remove-btn" onclick="removeFx(${i})">×</button>
     </div>`).join('');
 }
@@ -323,7 +324,7 @@ async function saveReport() {
   const mxn = document.getElementById('inp-mxn').value;
   if (!usd && !mxn) { showToast(t('saveEmpty')); return; }
   showToast(t('saving'));
-  const dateKey = new Date().toISOString().slice(0,10);z
+  const dateKey = new Date().toISOString().slice(0,10);
   const payload = {
     date_key: dateKey,
     date_label: new Date().toLocaleDateString('ko-KR'),
@@ -388,10 +389,7 @@ function updateAdminStatus() {
   const el = document.getElementById('admin-status');
   el.innerHTML = isAdminUnlocked ? `<span class="admin-badge">👤 ${t('adminLabel')}</span> <button class="logout-btn" onclick="logout()">${t('logout')}</button>` : '';
 }
-function changePw() {
-  const p1 = document.getElementById('new-pw').value;
-  const p2 = document.getElementById('new-pw2').value;
-  if (p1.length < 4) { showToast(t('pwShort')); return; }
+
   if (p1 !== p2) { showToast(t('pwMismatch')); return; }
   localStorage.setItem('admin-pw', p1);
   document.getElementById('new-pw').value = '';
