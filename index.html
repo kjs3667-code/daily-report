@@ -440,31 +440,25 @@ function loadHistory() {
         '</tr></thead><tbody>';
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
-        var fxStr = r.fx && r.fx.length ? r.fx.map(function(f) { return f.dir; }).join(', ') : '—';
+        var fxStr = '—';
+        if (r.fx && r.fx.length) {
+          fxStr = r.fx.map(function(f) {
+            var result = f.dir + ' ' + (f.amt || 0).toLocaleString();
+            if (f.rate) {
+              result += ' @ ' + parseFloat(f.rate).toFixed(2);
+              if (f.dir === 'USD→MXN') {
+                result += '<br><span style="color:var(--mxn)">= MXN ' + Math.round(f.amt * f.rate).toLocaleString() + '</span>';
+              } else {
+                result += '<br><span style="color:var(--usd)">= USD ' + Math.round(f.amt * f.rate).toLocaleString() + '</span>';
+              }
+            }
+            return result;
+          }).join('<br>—<br>');
+        }
         var dateLabel = r.date_label || r.date_key;
         html += '<tr>' +
           '<td>' + dateLabel + '</td>' +
           '<td>$' + (r.usd || 0).toLocaleString() + '</td>' +
           '<td>$' + (r.mxn || 0).toLocaleString() + '</td>' +
-          '<td>' + fxStr + '</td>' +
-          '<td style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--sans)">' + (r.memo || '—') + '</td>' +
-          '<td><button class="btn-danger" onclick="deleteReport(\'' + r.id + '\',\'' + dateLabel + '\')">🗑</button></td>' +
-          '</tr>';
-      }
-      html += '</tbody></table>';
-      wrap.innerHTML = html;
-    })
-    .catch(function(e) { wrap.innerHTML = '<div class="empty">오류: ' + e.message + '</div>'; });
-}
-
-function showToast(msg) {
-  var el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(function() { el.classList.remove('show'); }, 2800);
-}
-
-setLang(currentLang);
-</script>
-</body>
-</html>
+          '<td style="font-size:11px;min-width:160px;">' + fxStr + '</td>' +
+          '<td style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellip
