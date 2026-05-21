@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>일일 잔고 보고서</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F5F2ED; --surface: #FDFCFA; --surface2: #F0EDE7;
+    --border: #DDD9D0; --border2: #C8C3B8;
+    --text: #1A1916; --text2: #6B6760; --text3: #9A958E;
+    --usd: #1A5C3A; --usd-bg: #EAF4EE;
+    --mxn: #7A3B00; --mxn-bg: #FDF0E3;
+    --rate: #1A3A6B; --rate-bg: #E8EEF8;
+    --accent: #C84B2F; --green: #2A7A4B;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Noto Sans KR', sans-serif;
+  }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header {
+    background: var(--text); color: var(--bg);
+    padding: 1.1rem 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo-mark {
+    width: 30px; height: 30px; background: var(--accent); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 12px; font-weight: 500; color: #fff;
+  }
+  .header h1 { font-size: 14px; font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .header-date { font-family: var(--mono); font-size: 11px; color: #9A8F7E; }
+
+  .lang-toggle { display: flex; background: #2A2826; border-radius: 99px; padding: 3px; gap: 2px; }
+  .lang-btn { padding: 3px 11px; border-radius: 99px; font-size: 11px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: #7A7570; font-family: var(--sans); transition: all 0.15s; }
+  .lang-btn.active { background: var(--bg); color: var(--text); }
+
+  .rate-banner {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 9px 2rem; display: flex; align-items: center; gap: 1rem; font-size: 13px;
+  }
+  .live-pill { display: flex; align-items: center; gap: 6px; background: var(--usd-bg); border: 1px solid #C2DFC9; border-radius: 99px; padding: 3px 10px; font-family: var(--mono); font-size: 11px; color: var(--usd); font-weight: 500; }
+  .live-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .rate-val { font-family: var(--mono); font-weight: 500; font-size: 14px; color: var(--rate); }
+
+  .main { max-width: 800px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
+
+  .tabs { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; margin-bottom: 1.5rem; width: fit-content; gap: 0; }
+  .tab { padding: 7px 20px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text2); font-family: var(--sans); transition: all 0.15s; }
+  .tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  .metric-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.25rem; }
+  @media(max-width:600px){ .metric-grid{grid-template-columns:1fr 1fr} .form-row{grid-template-columns:1fr!important} .fx-row{grid-template-columns:1fr 1fr!important} .header{padding:1rem} .rate-banner{padding:9px 1rem;flex-wrap:wrap} .main{padding:1.25rem 1rem 3rem} }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; }
+  .metric-label { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .metric-value { font-family: var(--mono); font-size: 19px; font-weight: 500; line-height: 1; }
+  .metric-value.usd{color:var(--usd)} .metric-value.mxn{color:var(--mxn)} .metric-value.rate{color:var(--rate)}
+  .metric-sub { font-size: 11px; color: var(--text3); margin-top: 4px; font-family: var(--mono); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  .card-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .card-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 12px; font-weight: 500; color: var(--text2); }
+  .form-group input, .form-group select, .form-group textarea {
+    font-family: var(--mono); font-size: 14px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 7px;
+    padding: 9px 12px; color: var(--text); outline: none; transition: border-color 0.15s; -webkit-appearance:none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--border2); background: var(--surface); }
+  .form-group textarea { resize: vertical; min-height: 70px; font-family: var(--sans); font-size: 13px; line-height: 1.6; }
+
+  .fx-row { display: grid; grid-template-columns: 1.2fr 1.5fr 1.5fr auto; gap: 8px; align-items: end; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .fx-entry { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; font-family: var(--mono); }
+  .badge { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+  .badge-buy { background: var(--usd-bg); color: var(--usd); border: 1px solid #C2DFC9; }
+  .badge-sell { background: var(--mxn-bg); color: var(--mxn); border: 1px solid #E8CFA5; }
+
+  .btn-primary { background: var(--text); color: var(--bg); border: none; border-radius: 8px; padding: 10px 22px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--sans); transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.82; }
+  .btn-secondary { background: transparent; color: var(--text2); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 18px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--sans); transition: background 0.15s; }
+  .btn-secondary:hover { background: var(--surface2); }
+  .btn-icon { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--text2); font-family: var(--sans); transition: background 0.15s; }
+  .btn-icon:hover { background: var(--border); }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1.25rem; }
+  .remove-btn { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 16px; padding: 2px 6px; border-radius: 4px; font-family: var(--sans); }
+  .remove-btn:hover { background: #FDEDED; color: var(--accent); }
+
+  /* Password overlay */
+  .pw-overlay {
+    position: fixed; inset: 0; background: rgba(26,25,22,0.7);
+    display: flex; align-items: center; justify-content: center; z-index: 200;
+    backdrop-filter: blur(4px);
+  }
+  .pw-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 2rem 2.5rem; width: 320px; text-align: center;
+  }
+  .pw-box h2 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+  .pw-box p { font-size: 13px; color: var(--text2); margin-bottom: 1.25rem; }
+  .pw-box input { width: 100%; font-family: var(--mono); font-size: 18px; text-align: center; letter-spacing: 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: var(--text); outline: none; margin-bottom: 10px; }
+  .pw-box input:focus { border-color: var(--border2); }
+  .pw-error { font-size: 12px; color: var(--accent); margin-bottom: 8px; min-height: 18px; }
+  .pw-hint { font-size: 11px; color: var(--text3); margin-top: 10px; }
+
+  /* History table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 10px; border-bottom: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 12px; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .empty { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
+
+  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 20px; border-radius: 99px; font-size: 13px; opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .admin-badge { display: inline-flex; align-items: center; gap: 5px; background: #2A2826; color: #C8B99A; font-size: 11px; padding: 3px 10px; border-radius: 99px; font-family: var(--mono); }
+  .logout-btn { background: none; border: 1px solid #3A3835; color: #7A7570; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: var(--sans); }
+  .logout-btn:hover { background: #2A2826; color: #C8B99A; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-mark">₩$</div>
+    <h1 data-ko="일일 잔고 보고서" data-es="Reporte diario de saldos">일일 잔고 보고서</h1>
+  </div>
+  <div class="header-right">
+    <span class="header-date" id="header-date"></span>
+    <div id="admin-status"></div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btn-ko" onclick="setLang('ko')">한국어</button>
+      <button class="lang-btn" id="btn-es" onclick="setLang('es')">Español</button>
+    </div>
+  </div>
+</header>
+
+<div class="rate-banner">
+  <div class="live-pill">
+    <span class="live-dot"></span>
+    <span data-ko="실시간 환율" data-es="Tipo de cambio">실시간 환율</span>
+  </div>
+  <span class="rate-val" id="live-rate">—</span>
+  <span style="color:var(--text3);font-size:12px;">MXN / USD</span>
+  <span style="margin-left:auto;font-size:11px;color:var(--text3);" id="rate-time"></span>
+</div>
+
+<!-- Password overlay -->
+<div class="pw-overlay" id="pw-overlay" style="display:none;">
+  <div class="pw-box">
+    <h2 id="pw-title">🔒 관리자 확인</h2>
+    <p id="pw-desc">내역 조회는 법인장 전용입니다</p>
+    <input type="password" id="pw-input" maxlength="20" placeholder="••••" onkeydown="if(event.key==='Enter')checkPw()" />
+    <div class="pw-error" id="pw-error"></div>
+    <button class="btn-primary" style="width:100%;" onclick="checkPw()" id="pw-btn">확인</button>
+    <button onclick="closePwOverlay()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--text3);margin-top:12px;font-family:var(--sans);" id="pw-cancel">취소 / Cancelar</button>
+    <div class="pw-hint" id="pw-hint">기본 비밀번호: 1234 (설정에서 변경 가능)</div>
+  </div>
+</div>
+
+<main class="main">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('entry')" data-ko="오늘 입력" data-es="Ingresar hoy">오늘 입력</button>
+    <button class="tab" onclick="requestHistory()" data-ko="내역 조회 🔒" data-es="Historial 🔒">내역 조회 🔒</button>
+  </div>
+
+  <!-- ENTRY TAB -->
+  <div id="tab-entry">
+    <div class="metric-grid">
+      <div class="metric">
+        <div class="metric-label" data-ko="USD 잔고" data-es="Saldo USD">USD 잔고</div>
+        <div class="metric-value usd" id="m-usd">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label" data-ko="MXN 잔고" data-es="Saldo MXN">MXN 잔고</div>
+        <div class="metric-value mxn" id="m-mxn">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label" data-ko="USD→MXN 환산" data-es="USD→MXN equiv.">USD→MXN 환산</div>
+        <div class="metric-value rate" id="m-equiv">—</div>
+        <div class="metric-sub" id="m-equiv-sub"></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label" data-ko="총 MXN 합계" data-es="Total en MXN">총 MXN 합계</div>
+        <div class="metric-value" id="m-total">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-ko="잔고 입력" data-es="Ingresar saldos">잔고 입력</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label data-ko="USD 잔고 ($)" data-es="Saldo USD ($)">USD 잔고 ($)</label>
+          <input type="number" id="inp-usd" placeholder="0" oninput="updateMetrics()" />
+        </div>
+        <div class="form-group">
+          <label data-ko="MXN 잔고 ($)" data-es="Saldo MXN ($)">MXN 잔고 ($)</label>
+          <input type="number" id="inp-mxn" placeholder="0" oninput="updateMetrics()" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span data-ko="환전 내역" data-es="Cambio de divisas">환전 내역</span>
+        <span style="font-size:11px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;" data-ko="(없으면 비워두세요)" data-es="(dejar vacío si no hubo)">(없으면 비워두세요)</span>
+      </div>
+      <div id="fx-list"></div>
+      <div class="fx-row">
+        <div class="form-group">
+          <label data-ko="방향" data-es="Dirección">방향</label>
+          <select id="fx-dir">
+            <option value="USD→MXN">USD → MXN</option>
+            <option value="MXN→USD">MXN → USD</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-ko="금액" data-es="Monto">금액</label>
+          <input type="number" id="fx-amt" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label data-ko="적용 환율" data-es="Tipo aplicado">적용 환율</label>
+          <input type="number" id="fx-rate-inp" placeholder="—" />
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button class="btn-icon" onclick="addFx()" data-ko="+ 추가" data-es="+ Agregar">+ 추가</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-ko="메모 / 비고" data-es="Notas / Observaciones">메모 / 비고</div>
+      <div class="form-group">
+        <textarea id="inp-memo"
+          data-ko-placeholder="특이사항, 지시사항 등 자유롭게 작성..."
+          data-es-placeholder="Notas especiales, instrucciones, observaciones..."
+          placeholder="특이사항, 지시사항 등 자유롭게 작성..."></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="saveReport()" data-ko="보고서 저장" data-es="Guardar reporte">보고서 저장</button>
+      <button class="btn-secondary" onclick="copyKakao()" data-ko="카카오톡용 복사" data-es="Copiar para KakaoTalk">카카오톡용 복사</button>
+    </div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" style="display:none;">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div id="history-wrap">
+        <div class="empty" data-ko="아직 저장된 보고서가 없습니다." data-es="Aún no hay reportes guardados.">아직 저장된 보고서가 없습니다.</div>
+      </div>
+    </div>
+
+    <!-- Change password (admin only) -->
+    <div class="card" style="margin-top:1rem;" id="pw-change-card">
+      <div class="card-title" data-ko="비밀번호 변경" data-es="Cambiar contraseña">비밀번호 변경</div>
+      <div class="form-row" style="align-items:end;">
+        <div class="form-group">
+          <label data-ko="새 비밀번호" data-es="Nueva contraseña">새 비밀번호</label>
+          <input type="password" id="new-pw" placeholder="새 비밀번호 입력" />
+        </div>
+        <div class="form-group">
+          <label data-ko="확인" data-es="Confirmar">확인</label>
+          <input type="password" id="new-pw2" placeholder="다시 입력" />
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="changePw()" data-ko="변경하기" data-es="Cambiar">변경하기</button>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY_PREFIX = 'bizreport:';
+const DEFAULT_PW = '1234';
+
+let fxList = [];
+let liveRate = null;
+let isAdminUnlocked = false;
+let currentLang = localStorage.getItem('lang') || 'ko';
+
+const I18N = {
+  ko: {
+    saveEmpty:'잔고를 입력해주세요', fxEmpty:'금액을 입력해주세요',
+    saved:'저장 완료 ✓', copied:'복사됐어요 — 카카오톡에 붙여넣기 하세요',
+    rateCache:'캐시됨', rateLive:'실시간', rateFail:'API 오류', rateManual:'직접 입력',
+    historyEmpty:'아직 저장된 보고서가 없습니다.',
+    thDate:'날짜', thUSD:'USD 잔고', thMXN:'MXN 잔고', thRate:'환율', thFX:'환전', thMemo:'메모',
+    noFX:'없음',
+    kakaoTitle:'📊 일일 잔고 보고', kakaoUSD:'💵 USD 잔고', kakaoMXN:'🇲🇽 MXN 잔고',
+    kakaoRate:'📈 당일 환율', kakaoEquiv:'💱 USD→MXN 환산', kakaoTotal:'📦 총 MXN 합계',
+    kakaoFX:'🔄 환전 내역', kakaoMemo:'📝 메모',
+    pwTitle:'🔒 관리자 확인', pwDesc:'내역 조회는 법인장 전용입니다',
+    pwBtn:'확인', pwWrong:'비밀번호가 틀렸습니다',
+    adminLabel:'법인장 모드', logout:'로그아웃',
+    pwChanged:'비밀번호가 변경되었습니다', pwMismatch:'비밀번호가 일치하지 않습니다', pwShort:'4자 이상 입력해주세요',
+  },
+  es: {
+    saveEmpty:'Por favor ingresa el saldo', fxEmpty:'Por favor ingresa el monto',
+    saved:'Guardado ✓', copied:'Copiado — pega en KakaoTalk',
+    rateCache:'En caché', rateLive:'En vivo', rateFail:'Error de conexión', rateManual:'Ingresar manual',
+    historyEmpty:'Aún no hay reportes guardados.',
+    thDate:'Fecha', thUSD:'Saldo USD', thMXN:'Saldo MXN', thRate:'Tipo', thFX:'Cambio', thMemo:'Notas',
+    noFX:'Ninguno',
+    kakaoTitle:'📊 Reporte diario de saldos', kakaoUSD:'💵 Saldo USD', kakaoMXN:'🇲🇽 Saldo MXN',
+    kakaoRate:'📈 Tipo de cambio', kakaoEquiv:'💱 USD→MXN equiv.', kakaoTotal:'📦 Total en MXN',
+    kakaoFX:'🔄 Cambio de divisas', kakaoMemo:'📝 Notas',
+    pwTitle:'🔒 Verificación', pwDesc:'El historial es exclusivo para el/la directora',
+    pwBtn:'Confirmar', pwWrong:'Contraseña incorrecta',
+    adminLabel:'Modo director/a', logout:'Cerrar sesión',
+    pwChanged:'Contraseña actualizada', pwMismatch:'Las contraseñas no coinciden', pwShort:'Mínimo 4 caracteres',
+  }
+};
+
+function t(k) { return I18N[currentLang][k]; }
+
+// --- LocalStorage helpers ---
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+  keys: prefix => Object.keys(localStorage).filter(k => k.startsWith(prefix))
+};
+
+function getPw() { return localStorage.getItem('admin-pw') || DEFAULT_PW; }
+
+// --- Init ---
+document.getElementById('header-date').textContent =
+  new Date().toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric',weekday:'short'});
+
+// --- Language ---
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  document.getElementById('btn-ko').classList.toggle('active', lang==='ko');
+  document.getElementById('btn-es').classList.toggle('active', lang==='es');
+  document.querySelectorAll('[data-ko]').forEach(el => {
+    el.textContent = el.getAttribute('data-'+lang);
+  });
+  const memo = document.getElementById('inp-memo');
+  memo.placeholder = memo.getAttribute('data-'+lang+'-placeholder') || memo.placeholder;
+  document.getElementById('pw-title').textContent = t('pwTitle');
+  document.getElementById('pw-desc').textContent = t('pwDesc');
+  document.getElementById('pw-btn').textContent = t('pwBtn');
+  updateAdminStatus();
+  if (isAdminUnlocked) loadHistory();
+  renderFx();
+}
+
+// --- Rate ---
+async function loadRate() {
+  const today = new Date().toDateString();
+  const cached = LS.get('rate-cache');
+  if (cached && cached.date === today) { liveRate = cached.rate; setRate('rateCache'); return; }
+  try {
+    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN');
+    const d = await r.json();
+    liveRate = d.rates.MXN;
+    LS.set('rate-cache', {rate:liveRate, date:today});
+    setRate('rateLive');
+  } catch(e) {
+    document.getElementById('live-rate').textContent = t('rateManual');
+    document.getElementById('rate-time').textContent = t('rateFail');
+  }
+}
+
+function setRate(labelKey) {
+  document.getElementById('live-rate').textContent = liveRate.toFixed(4);
+  document.getElementById('rate-time').textContent = t(labelKey);
+  document.getElementById('fx-rate-inp').placeholder = liveRate.toFixed(2);
+  updateMetrics();
+}
+
+// --- Metrics ---
+function updateMetrics() {
+  const usd = parseFloat(document.getElementById('inp-usd').value)||0;
+  const mxn = parseFloat(document.getElementById('inp-mxn').value)||0;
+  document.getElementById('m-usd').textContent = usd ? '$'+Math.round(usd).toLocaleString() : '—';
+  document.getElementById('m-mxn').textContent = mxn ? '$'+Math.round(mxn).toLocaleString() : '—';
+  if (usd && liveRate) {
+    const eq = usd*liveRate;
+    document.getElementById('m-equiv').textContent = '$'+Math.round(eq).toLocaleString();
+    document.getElementById('m-equiv-sub').textContent = '@ '+liveRate.toFixed(2);
+    document.getElementById('m-total').textContent = '$'+Math.round(eq+mxn).toLocaleString();
+  } else {
+    document.getElementById('m-equiv').textContent = '—';
+    document.getElementById('m-equiv-sub').textContent = '';
+    document.getElementById('m-total').textContent = '—';
+  }
+}
+
+// --- FX ---
+function addFx() {
+  const amt = parseFloat(document.getElementById('fx-amt').value);
+  if (!amt) { showToast(t('fxEmpty')); return; }
+  fxList.push({
+    dir: document.getElementById('fx-dir').value,
+    amt,
+    rate: parseFloat(document.getElementById('fx-rate-inp').value) || liveRate || null
+  });
+  document.getElementById('fx-amt').value = '';
+  document.getElementById('fx-rate-inp').value = '';
+  renderFx();
+}
+
+function removeFx(i) { fxList.splice(i,1); renderFx(); }
+
+function renderFx() {
+  const wrap = document.getElementById('fx-list');
+  if (!fxList.length) { wrap.innerHTML=''; return; }
+  wrap.innerHTML = fxList.map((f,i) => `
+    <div class="fx-entry">
+      <span class="badge ${f.dir.startsWith('USD')?'badge-buy':'badge-sell'}">${f.dir}</span>
+      <span style="flex:1;">${f.amt.toLocaleString()} <span style="color:var(--text3);">@ ${f.rate?f.rate.toFixed(2):'—'}</span></span>
+      <button class="remove-btn" onclick="removeFx(${i})">×</button>
+    </div>`).join('');
+}
+
+// --- Save ---
+function saveReport() {
+  const usd = document.getElementById('inp-usd').value;
+  const mxn = document.getElementById('inp-mxn').value;
+  if (!usd && !mxn) { showToast(t('saveEmpty')); return; }
+  const dateKey = new Date().toISOString().slice(0,10);
+  LS.set(STORAGE_KEY_PREFIX+dateKey, {
+    date: new Date().toLocaleDateString('ko-KR'),
+    dateKey,
+    usd: parseFloat(usd)||0,
+    mxn: parseFloat(mxn)||0,
+    rate: liveRate,
+    fx: [...fxList],
+    memo: document.getElementById('inp-memo').value,
+    savedAt: Date.now()
+  });
+  showToast(t('saved'));
+}
+
+// --- Copy ---
+function copyKakao() {
+  const usd = parseFloat(document.getElementById('inp-usd').value)||0;
+  const mxn = parseFloat(document.getElementById('inp-mxn').value)||0;
+  const memo = document.getElementById('inp-memo').value;
+  const today = new Date().toLocaleDateString('ko-KR');
+  const rate = liveRate ? liveRate.toFixed(2) : '—';
+  const equiv = liveRate ? Math.round(usd*liveRate).toLocaleString() : '—';
+  const total = liveRate ? Math.round(usd*liveRate+mxn).toLocaleString() : '—';
+  const fxText = fxList.length
+    ? fxList.map(f=>`  • ${f.dir}  ${f.amt.toLocaleString()}  (@ ${f.rate?f.rate.toFixed(2):'—'})`).join('\n')
+    : `  ${t('noFX')}`;
+  const text = [
+    `${t('kakaoTitle')} — ${today}`, ``,
+    `${t('kakaoUSD')}   $${usd.toLocaleString()}`,
+    `${t('kakaoMXN')}   $${mxn.toLocaleString()}`,
+    `${t('kakaoRate')}   ${rate} MXN/USD`, ``,
+    `${t('kakaoEquiv')}   $${equiv}`,
+    `${t('kakaoTotal')}   $${total}`, ``,
+    `${t('kakaoFX')}`, fxText,
+    memo ? `\n${t('kakaoMemo')}\n${memo}` : ''
+  ].join('\n');
+  navigator.clipboard.writeText(text).then(()=>showToast(t('copied')));
+}
+
+// --- Password / Admin ---
+function requestHistory() {
+  if (isAdminUnlocked) { showHistoryTab(); return; }
+  document.getElementById('pw-error').textContent = '';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-overlay').style.display = 'flex';
+  setTimeout(()=>document.getElementById('pw-input').focus(), 100);
+}
+
+function closePwOverlay() {
+  document.getElementById('pw-overlay').style.display = 'none';
+}
+
+function checkPw() {
+  const val = document.getElementById('pw-input').value;
+  if (val === getPw()) {
+    isAdminUnlocked = true;
+    closePwOverlay();
+    showHistoryTab();
+    updateAdminStatus();
+  } else {
+    document.getElementById('pw-error').textContent = t('pwWrong');
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+function logout() {
+  isAdminUnlocked = false;
+  updateAdminStatus();
+  switchTab('entry');
+}
+
+function updateAdminStatus() {
+  const el = document.getElementById('admin-status');
+  if (isAdminUnlocked) {
+    el.innerHTML = `<span class="admin-badge">👤 ${t('adminLabel')}</span> <button class="logout-btn" onclick="logout()">${t('logout')}</button>`;
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+function changePw() {
+  const p1 = document.getElementById('new-pw').value;
+  const p2 = document.getElementById('new-pw2').value;
+  if (p1.length < 4) { showToast(t('pwShort')); return; }
+  if (p1 !== p2) { showToast(t('pwMismatch')); return; }
+  localStorage.setItem('admin-pw', p1);
+  document.getElementById('new-pw').value = '';
+  document.getElementById('new-pw2').value = '';
+  showToast(t('pwChanged'));
+}
+
+// --- Tabs ---
+function showHistoryTab() {
+  document.getElementById('tab-entry').style.display = 'none';
+  document.getElementById('tab-history').style.display = '';
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active', i===1));
+  loadHistory();
+}
+
+function switchTab(t) {
+  document.getElementById('tab-entry').style.display = t==='entry' ? '' : 'none';
+  document.getElementById('tab-history').style.display = t==='history' ? '' : 'none';
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',(i===0)===(t==='entry')));
+  if (t==='history') loadHistory();
+}
+
+function loadHistory() {
+  const keys = LS.keys(STORAGE_KEY_PREFIX).sort().reverse();
+  const wrap = document.getElementById('history-wrap');
+  if (!keys.length) { wrap.innerHTML=`<div class="empty">${t('historyEmpty')}</div>`; return; }
+  const rows = keys.map(k=>LS.get(k)).filter(Boolean);
+  wrap.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>${t('thDate')}</th><th>${t('thUSD')}</th><th>${t('thMXN')}</th>
+        <th>${t('thRate')}</th><th>${t('thFX')}</th><th>${t('thMemo')}</th>
+      </tr></thead>
+      <tbody>${rows.map(r=>`
+        <tr>
+          <td>${r.date}</td>
+          <td>$${r.usd.toLocaleString()}</td>
+          <td>$${r.mxn.toLocaleString()}</td>
+          <td>${r.rate?parseFloat(r.rate).toFixed(2):'—'}</td>
+          <td>${r.fx&&r.fx.length?r.fx.map(f=>f.dir).join(', '):'—'}</td>
+          <td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--sans);">${r.memo||'—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// --- Toast ---
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2800);
+}
+
+// --- Init ---
+loadRate();
+setLang(currentLang);
+</script>
+</body>
+</html>
