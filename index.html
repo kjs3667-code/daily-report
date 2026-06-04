@@ -99,7 +99,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
 th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); background: var(--surface); }
 td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 12px; vertical-align: middle; }
-td.memo-cell { font-family: var(--sans); white-space: normal; min-width: 160px; max-width: 240px; word-break: break-word; }
+
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--surface2); }
 
@@ -480,7 +480,7 @@ function loadHistory() {
           '<td>' + fxAmt + '</td>' +
           '<td>' + fxRate + '</td>' +
           '<td>' + fxRes + '</td>' +
-          '<td class="memo-cell">' + (r.memo || '—') + '</td>' +
+          '<td style="font-family:var(--sans);white-space:normal;word-break:break-word;min-width:180px;max-width:220px">' + (r.memo || '—') + '</td>' +
           '<td><button class="btn-del" onclick="delReport(\'' + r.id + '\',\'' + dl + '\')">🗑</button></td>' +
           '</tr>';
       });
